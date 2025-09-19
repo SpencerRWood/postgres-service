@@ -1,0 +1,15 @@
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile    # adjust case to match your file
+    container_name: ${APP_NAME:-app}-dev      # <-- now sibling of build
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    command: sleep infinity
+    env_file:
+      - .env                                  # this .env must be in .devcontainer/
+    ports:
+      - "8000:8000"                           # keep this aligned with your app

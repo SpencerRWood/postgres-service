@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  app:
+    image: ghcr.io/${GITHUB_REPOSITORY}:${BUILD_ID}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    ports:
+      - "8000:8000"

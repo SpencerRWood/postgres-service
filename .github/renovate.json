@@ -1,0 +1,11 @@
+{
+  "extends": ["github>your-org/renovate-config"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "branch"
+    }
+  ]
+}
