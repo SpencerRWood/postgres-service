@@ -3,11 +3,21 @@ name: Build & Push (GHCR)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      pg_major:
+        description: "Postgres major version"
+        type: string
+        required: true
+        default: "17"
 
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: ghcr-postgres-service-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   push:
@@ -15,11 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set BUILD_ID
-        run: echo "BUILD_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-
-      - name: Lowercase repo (GHCR requires lowercase)
-        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+      - name: Set vars
+        run: |
+          echo "BUILD_ID=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+          echo "PG_MAJOR=${{ inputs.pg_major || '17' }}" >> $GITHUB_ENV
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -37,9 +47,18 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            PG_MAJOR=${{ env.PG_MAJOR }}
+          # platforms: linux/amd64   # uncomment if you want to pin arch
           tags: |
             ghcr.io/${{ env.REPO_LC }}:${{ env.BUILD_ID }}
+            ghcr.io/${{ env.REPO_LC }}:${{ env.PG_MAJOR }}
             ghcr.io/${{ env.REPO_LC }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
+
+      - name: Output digest (useful for deploy pinning)
+        run: |
+          echo "Digest: ${{ steps.build.outputs.digest }}"
+          echo "ghcr.io/${{ env.REPO_LC }}@${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
