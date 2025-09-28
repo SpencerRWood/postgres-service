@@ -1,2 +1,4 @@
 .devcontainer/
 */.env
+.DS_store
+.vscode
